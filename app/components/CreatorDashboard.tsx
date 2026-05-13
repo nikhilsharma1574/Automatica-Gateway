@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 interface CreatorDashboardProps {
   username: string
@@ -13,6 +13,31 @@ export default function CreatorDashboard({ username }: CreatorDashboardProps) {
     Array<{ id: string; channelLink: string; realLink: string; createdAt: string }>
   >([])
   const [isLoading, setIsLoading] = useState(false)
+
+  // Load gated links from Vercel KV on mount
+  React.useEffect(() => {
+    const loadLinks = async () => {
+      try {
+        const response = await fetch('/api/gated-links/get')
+        const data = await response.json()
+        if (data.gatedLinks) {
+          setGatedLinks(data.gatedLinks)
+        }
+      } catch (error) {
+        console.error('Failed to load gated links:', error)
+        // Fallback to localStorage for development
+        const stored = localStorage.getItem('gatedLinks')
+        if (stored) {
+          try {
+            setGatedLinks(JSON.parse(stored))
+          } catch (e) {
+            console.error('Failed to load gated links from localStorage:', e)
+          }
+        }
+      }
+    }
+    loadLinks()
+  }, [])
 
   const handleCreateGate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,19 +54,40 @@ export default function CreatorDashboard({ username }: CreatorDashboardProps) {
 
     setIsLoading(true)
 
-    // Simulate creating a gated link
-    setTimeout(() => {
+    try {
       const newLink = {
         id: Date.now().toString(),
         channelLink: youtubeChannelLink,
         realLink: realLink,
         createdAt: new Date().toLocaleString(),
       }
-      setGatedLinks([...gatedLinks, newLink])
+      const updatedLinks = [...gatedLinks, newLink]
+      setGatedLinks(updatedLinks)
+
+      // Save to Vercel KV
+      const response = await fetch('/api/gated-links/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gatedLinks: updatedLinks }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save gated link')
+      }
+
+      // Also save to localStorage as fallback
+      localStorage.setItem('gatedLinks', JSON.stringify(updatedLinks))
+
       setYoutubeChannelLink('')
       setRealLink('')
+    } catch (error) {
+      console.error('Error creating gated link:', error)
+      alert('Failed to create gated link. Please try again.')
+      // Revert the local state on error
+      setGatedLinks(gatedLinks.slice(0, -1))
+    } finally {
       setIsLoading(false)
-    }, 500)
+    }
   }
 
   return (
