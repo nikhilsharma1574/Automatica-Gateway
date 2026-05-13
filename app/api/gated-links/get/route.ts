@@ -1,10 +1,19 @@
-import { kv } from '@vercel/kv'
+import { Redis } from '@upstash/redis'
 import { NextRequest, NextResponse } from 'next/server'
+
+const isRedisConfigured = Boolean(
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+)
+const redis = isRedisConfigured ? Redis.fromEnv() : null
 
 export async function GET(request: NextRequest) {
   try {
-    const stored = await kv.get('gatedLinks')
-    
+    if (!isRedisConfigured || !redis) {
+      return NextResponse.json({ gatedLinks: [] })
+    }
+
+    const stored = await redis.get('gatedLinks')
+
     if (!stored) {
       return NextResponse.json({ gatedLinks: [] })
     }

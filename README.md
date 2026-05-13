@@ -59,6 +59,13 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id_here
 YOUTUBE_API_KEY=your_youtube_api_key_here
 ```
 
+If you want Upstash Redis for production data storage, add these too:
+
+```env
+UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url_here
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token_here
+```
+
 ### 4. Run Development Server
 
 ```bash

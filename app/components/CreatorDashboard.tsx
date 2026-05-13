@@ -54,14 +54,15 @@ export default function CreatorDashboard({ username }: CreatorDashboardProps) {
 
     setIsLoading(true)
 
+    const newLink = {
+      id: Date.now().toString(),
+      channelLink: youtubeChannelLink,
+      realLink: realLink,
+      createdAt: new Date().toLocaleString(),
+    }
+    const updatedLinks = [...gatedLinks, newLink]
+
     try {
-      const newLink = {
-        id: Date.now().toString(),
-        channelLink: youtubeChannelLink,
-        realLink: realLink,
-        createdAt: new Date().toLocaleString(),
-      }
-      const updatedLinks = [...gatedLinks, newLink]
       setGatedLinks(updatedLinks)
 
       // Save to Vercel KV
@@ -72,19 +73,28 @@ export default function CreatorDashboard({ username }: CreatorDashboardProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save gated link')
+        const errorData = await response.json().catch(() => null)
+        console.warn('KV save failed:', errorData?.error || response.statusText)
+
+        // Fallback to localStorage when KV is unavailable
+        localStorage.setItem('gatedLinks', JSON.stringify(updatedLinks))
+        setYoutubeChannelLink('')
+        setRealLink('')
+        setIsLoading(false)
+        return
       }
 
-      // Also save to localStorage as fallback
+      // Also save to localStorage as fallback for faster local access
       localStorage.setItem('gatedLinks', JSON.stringify(updatedLinks))
 
       setYoutubeChannelLink('')
       setRealLink('')
     } catch (error) {
       console.error('Error creating gated link:', error)
-      alert('Failed to create gated link. Please try again.')
-      // Revert the local state on error
-      setGatedLinks(gatedLinks.slice(0, -1))
+      // Fallback to localStorage when network or KV errors happen
+      localStorage.setItem('gatedLinks', JSON.stringify(updatedLinks))
+      setYoutubeChannelLink('')
+      setRealLink('')
     } finally {
       setIsLoading(false)
     }
