@@ -9,7 +9,13 @@ const redis = isRedisConfigured ? Redis.fromEnv() : null
 export async function GET(request: NextRequest) {
   try {
     if (!isRedisConfigured || !redis) {
-      return NextResponse.json({ gatedLinks: [] })
+      return NextResponse.json(
+        {
+          error:
+            'Upstash Redis is not configured. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in environment variables.',
+        },
+        { status: 500 }
+      )
     }
 
     const stored = await redis.get('gatedLinks')

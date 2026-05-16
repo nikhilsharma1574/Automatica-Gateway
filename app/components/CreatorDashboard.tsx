@@ -188,9 +188,16 @@ export default function CreatorDashboard({ username }: CreatorDashboardProps) {
 
                 <div className="mb-4">
                   <p className="text-sm text-gray-600">Gatekeeper URL</p>
-                  <code className="bg-gray-100 px-3 py-2 rounded text-sm break-all">
-                    {`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${link.id}`}
-                  </code>
+                  <div className="bg-gray-100 px-3 py-2 rounded text-sm break-all">
+                    <a
+                      href={`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${link.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-red-600 hover:underline break-all"
+                    >
+                      {`${typeof window !== 'undefined' ? window.location.origin : ''}/verify/${link.id}`}
+                    </a>
+                  </div>
                 </div>
 
                 <p className="text-xs text-gray-500">Created: {link.createdAt}</p>

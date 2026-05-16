@@ -30,7 +30,11 @@ export default function VerifyPage() {
       try {
         const response = await fetch('/api/gated-links/get')
         const data = await response.json()
-        
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load gated links')
+        }
+
         if (data.gatedLinks && Array.isArray(data.gatedLinks)) {
           const link = data.gatedLinks.find((l: GatedLink) => l.id === id)
           if (link) {
@@ -41,8 +45,8 @@ export default function VerifyPage() {
         } else {
           setError('No gated links found. This link may have expired.')
         }
-      } catch (e) {
-        console.error('Error loading from KV, falling back to localStorage:', e)
+      } catch (e: any) {
+        console.error('Error loading gated links:', e)
         // Fallback to localStorage for development
         const stored = localStorage.getItem('gatedLinks')
         if (stored) {
@@ -58,7 +62,7 @@ export default function VerifyPage() {
             setError('Failed to load gated link')
           }
         } else {
-          setError('No gated links found. This link may have expired.')
+          setError(e.message || 'No gated links found. This link may have expired.')
         }
       }
       setIsLoading(false)
