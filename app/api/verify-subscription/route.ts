@@ -11,17 +11,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Extract channel handle from URL
-    const channelHandle = extractChannelHandle(channelUrl)
-    if (!channelHandle) {
+    // Extract channel identifier from URL
+    const channelInfo = extractChannelInfo(channelUrl)
+    if (!channelInfo) {
       return NextResponse.json(
         { error: 'Invalid YouTube channel URL' },
         { status: 400 }
       )
     }
 
-    // Get channel ID from handle
-    const channelId = await getChannelIdFromHandle(channelHandle)
+    // Get channel ID
+    const channelId = await resolveChannelId(channelInfo)
     if (!channelId) {
       return NextResponse.json(
         { error: 'Channel not found' },
@@ -42,22 +42,32 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function extractChannelHandle(url: string): string | null {
+interface ChannelInfo {
+  type: 'id' | 'handle' | 'customUrl' | 'username'
+  value: string
+}
+
+function extractChannelInfo(url: string): ChannelInfo | null {
   try {
-    // Handle @handle format
-    if (url.includes('@')) {
-      const match = url.match(/@([\w-]+)/)
-      return match ? match[1] : null
+    // Handle direct channel ID format: /channel/UCxxxxxx
+    if (url.includes('/channel/')) {
+      const match = url.match(/\/channel\/(UC[\w-]+)/)
+      if (match) return { type: 'id', value: match[1] }
     }
-    // Handle /c/channel-name format
+    // Handle @handle format: /@handle or youtube.com/@handle
+    if (url.includes('@')) {
+      const match = url.match(/@([\w.-]+)/)
+      if (match) return { type: 'handle', value: match[1] }
+    }
+    // Handle /c/custom-name format
     if (url.includes('/c/')) {
       const match = url.match(/\/c\/([\w-]+)/)
-      return match ? match[1] : null
+      if (match) return { type: 'customUrl', value: match[1] }
     }
     // Handle /user/username format
     if (url.includes('/user/')) {
       const match = url.match(/\/user\/([\w-]+)/)
-      return match ? match[1] : null
+      if (match) return { type: 'username', value: match[1] }
     }
     return null
   } catch {
@@ -65,22 +75,56 @@ function extractChannelHandle(url: string): string | null {
   }
 }
 
-async function getChannelIdFromHandle(handle: string): Promise<string | null> {
+async function resolveChannelId(info: ChannelInfo): Promise<string | null> {
+  // If it's already a channel ID, return it directly
+  if (info.type === 'id') {
+    return info.value
+  }
+
+  const apiKey = process.env.YOUTUBE_API_KEY
+  if (!apiKey) {
+    console.error('YOUTUBE_API_KEY not configured')
+    return null
+  }
+
   try {
-    const apiKey = process.env.YOUTUBE_API_KEY
-    if (!apiKey) {
-      console.error('YOUTUBE_API_KEY not configured')
-      return null
+    // For @handles, use the channels endpoint with forHandle parameter
+    if (info.type === 'handle') {
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent(info.value)}&key=${apiKey}`,
+        {
+          headers: {
+            'Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+          }
+        }
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.items && data.items.length > 0) {
+          return data.items[0].id
+        }
+      } else {
+        const errorText = await response.text()
+        console.error('YouTube API error (channels/forHandle):', response.status, errorText)
+      }
     }
 
+    // Fallback: use the search endpoint for custom URLs and usernames
     const response = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
-        handle
-      )}&type=channel&key=${apiKey}`
+        info.value
+      )}&type=channel&maxResults=1&key=${apiKey}`,
+      {
+        headers: {
+          'Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        }
+      }
     )
 
     if (!response.ok) {
-      console.error('YouTube API error:', response.statusText)
+      const errorText = await response.text()
+      console.error('YouTube API error (search):', response.status, errorText)
       return null
     }
 
@@ -91,7 +135,7 @@ async function getChannelIdFromHandle(handle: string): Promise<string | null> {
 
     return null
   } catch (error) {
-    console.error('Error getting channel ID:', error)
+    console.error('Error resolving channel ID:', error)
     return null
   }
 }
@@ -103,6 +147,7 @@ async function checkSubscription(accessToken: string, channelId: string): Promis
       {
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          'Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
         },
       }
     )
@@ -112,7 +157,8 @@ async function checkSubscription(accessToken: string, channelId: string): Promis
         console.error('Invalid or expired access token')
         return false
       }
-      console.error('YouTube API error:', response.statusText)
+      const errorText = await response.text()
+      console.error('YouTube API error (subscriptions):', response.status, errorText)
       return false
     }
 
