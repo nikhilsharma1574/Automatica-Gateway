@@ -12,28 +12,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Upstash Redis is not configured. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN in environment variables.',
+            'Upstash Redis is not configured.',
         },
         { status: 500 }
       )
     }
 
-    const { gatedLinks } = await request.json()
-
-    if (!Array.isArray(gatedLinks)) {
-      return NextResponse.json(
-        { error: 'Invalid gated links data' },
-        { status: 400 }
-      )
+    const data = await request.json()
+    
+    // Fetch existing links
+    const stored = await redis.get('gatedLinks')
+    let existingLinks: any[] = []
+    
+    if (stored) {
+      existingLinks = typeof stored === 'string' ? JSON.parse(stored) : stored
     }
 
-    await redis.set('gatedLinks', JSON.stringify(gatedLinks))
+    // Handle single new link (preferred for universal app)
+    if (data.newLink) {
+      existingLinks.push(data.newLink)
+      await redis.set('gatedLinks', JSON.stringify(existingLinks))
+      return NextResponse.json({ success: true })
+    }
+    
+    // Handle bulk array override (legacy support)
+    if (data.gatedLinks && Array.isArray(data.gatedLinks)) {
+      // In a real app we'd merge, but for now we'll just prepend to avoid losing data
+      const merged = [...data.gatedLinks, ...existingLinks]
+      // deduplicate by id
+      const uniqueIds = new Set()
+      const uniqueLinks = merged.filter(l => {
+        if (uniqueIds.has(l.id)) return false
+        uniqueIds.add(l.id)
+        return true
+      })
+      await redis.set('gatedLinks', JSON.stringify(uniqueLinks))
+      return NextResponse.json({ success: true })
+    }
 
-    return NextResponse.json({ success: true })
-  } catch (error: any) {
-    console.error('Error saving gated links:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to save gated links' },
+      { error: 'Invalid data provided' },
+      { status: 400 }
+    )
+
+  } catch (error: any) {
+    console.error('Error saving gated link:', error)
+    return NextResponse.json(
+      { error: error.message || 'Failed to save gated link' },
       { status: 500 }
     )
   }
