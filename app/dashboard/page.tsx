@@ -7,12 +7,14 @@ interface GatedLink {
   id: string
   channelLink: string
   realLink: string
+  fileName?: string
   createdAt: string
 }
 
 export default function DashboardPage() {
   const [youtubeChannelLink, setYoutubeChannelLink] = useState('')
   const [realLink, setRealLink] = useState('')
+  const [fileName, setFileName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [myLinks, setMyLinks] = useState<GatedLink[]>([])
   const [justGeneratedLink, setJustGeneratedLink] = useState<string | null>(null)
@@ -31,8 +33,8 @@ export default function DashboardPage() {
   const handleCreateGate = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!youtubeChannelLink.trim() || !realLink.trim()) {
-      alert('Please fill in both fields')
+    if (!youtubeChannelLink.trim() || !realLink.trim() || !fileName.trim()) {
+      alert('Please fill in all fields')
       return
     }
 
@@ -48,6 +50,7 @@ export default function DashboardPage() {
       id: Date.now().toString(),
       channelLink: youtubeChannelLink,
       realLink: realLink,
+      fileName: fileName,
       createdAt: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
     }
 
@@ -64,6 +67,7 @@ export default function DashboardPage() {
 
       setYoutubeChannelLink('')
       setRealLink('')
+      setFileName('')
       
       const domain = typeof window !== 'undefined' ? window.location.origin : ''
       setJustGeneratedLink(`${domain}/verify/${newLink.id}`)
@@ -145,6 +149,25 @@ export default function DashboardPage() {
                     value={realLink}
                     onChange={(e) => setRealLink(e.target.value)}
                     placeholder="https://drive.google.com/..."
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 placeholder-gray-400 transition-all font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">3. Name of File / Content</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    value={fileName}
+                    onChange={(e) => setFileName(e.target.value)}
+                    placeholder="e.g. Graphic Design Assets Pack"
                     className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 placeholder-gray-400 transition-all font-medium"
                     required
                   />

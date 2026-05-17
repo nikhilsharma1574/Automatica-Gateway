@@ -7,6 +7,7 @@ interface GatedLink {
   id: string
   channelLink: string
   realLink: string
+  fileName?: string
   createdAt: string
 }
 
@@ -182,10 +183,11 @@ export default function VerifyPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-lg shadow-lg p-8 border border-gray-200">
+        <div className="bg-white rounded-lg shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] p-8 border border-gray-100">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Unlock Content</h1>
-            <p className="text-gray-600">Please complete the step below to unlock the hidden link</p>
+            <span className="inline-block bg-red-50 text-red-600 px-4 py-1.5 rounded-full text-sm font-bold tracking-wide mb-4">LOCKED CONTENT</span>
+            <h1 className="text-3xl font-extrabold text-gray-900 mb-3">{gatedLink.fileName || 'Secret Content'}</h1>
+            <p className="text-gray-500 font-medium">Please complete the step below to unlock this link</p>
           </div>
 
           {/* Verification Status */}
@@ -244,7 +246,7 @@ export default function VerifyPage() {
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {isVerified ? 'Go to Destination Link ✨' : 'Locked'}
+                {isVerified ? `Open ${gatedLink.fileName || 'Content'} ✨` : 'Locked'}
               </button>
             </div>
           </div>
