@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 interface GatedLink {
   id: string
@@ -25,22 +26,17 @@ export default function VerifyPage() {
   useEffect(() => {
     const loadLink = async () => {
       try {
-        const response = await fetch('/api/gated-links/get')
+        const response = await fetch(`/api/gated-links/get?id=${id}`)
         const data = await response.json()
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to load gated links')
+          throw new Error(data.error || 'Failed to load gated link')
         }
 
-        if (data.gatedLinks && Array.isArray(data.gatedLinks)) {
-          const link = data.gatedLinks.find((l: GatedLink) => l.id === id)
-          if (link) {
-            setGatedLink(link)
-          } else {
-            setError('Gated link not found')
-          }
+        if (data.gatedLink) {
+          setGatedLink(data.gatedLink)
         } else {
-          setError('No gated links found. This link may have expired.')
+          setError('Gated link not found or expired.')
         }
       } catch (e: any) {
         console.error('Error loading gated links:', e)
@@ -89,11 +85,16 @@ export default function VerifyPage() {
     } else if (isIOS) {
       // iOS: Try custom scheme first
       const iosUrl = subscribeUrl.replace(/^https?:\/\//, 'youtube://')
+      
+      // Store time to check if app switch was successful
+      const start = Date.now()
       window.location.href = iosUrl
       
-      // Fallback for iOS if app isn't installed
+      // Only fallback to browser if we didn't switch to the app (page remained active)
       setTimeout(() => {
-        window.location.href = subscribeUrl
+        if (!document.hidden && Date.now() - start < 3000) {
+          window.location.href = subscribeUrl
+        }
       }, 2500)
     } else {
       // Desktop: Open in new tab
@@ -192,22 +193,24 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <div className="flex items-center justify-center py-6 bg-white border-b border-gray-100 mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white shadow-sm">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="flex justify-center py-6 sm:py-8 border-b border-gray-100 bg-white/50 backdrop-blur-md">
+        <Link href="/" className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white text-lg sm:text-xl shadow-lg shadow-red-500/20">
             A
           </div>
-          <span className="text-xl font-black tracking-tight text-gray-900">Automatica</span>
-        </div>
-      </div>
+          <span className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">Automatica</span>
+        </Link>
+      </header>
 
-      <div className="max-w-2xl mx-auto px-6 py-12">
-        <div className="bg-white rounded-lg shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] p-8 border border-gray-100">
-          <div className="text-center mb-8">
-            <span className="inline-block bg-red-50 text-red-600 px-4 py-1.5 rounded-full text-sm font-bold tracking-wide mb-4">LOCKED CONTENT</span>
-            <h1 className="text-3xl font-extrabold text-gray-900 mb-3">{gatedLink.fileName || 'Secret Content'}</h1>
-            <p className="text-gray-500 font-medium">Please complete the step below to unlock this link</p>
+      {/* Main Content */}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-[0_10px_40px_-12px_rgba(0,0,0,0.1)] p-6 sm:p-8 border border-gray-100">
+          <div className="text-center mb-6 sm:mb-8">
+            <span className="inline-block bg-red-50 text-red-600 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold tracking-wide mb-3 sm:mb-4">LOCKED CONTENT</span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2 sm:mb-3">{gatedLink.fileName || 'Secret Content'}</h1>
+            <p className="text-sm sm:text-base text-gray-500 font-medium">Please complete the step below to unlock this link</p>
           </div>
 
           {/* Verification Status */}
@@ -226,9 +229,10 @@ export default function VerifyPage() {
               ) : (
                 <button
                   onClick={handleSubscribeClick}
-                  className="w-full sm:w-auto px-8 py-4 bg-red-600 text-white font-bold text-lg rounded-xl hover:bg-red-700 transition transform hover:scale-105 shadow-md flex items-center justify-center mx-auto gap-3"
+                  disabled={isVerifying || isVerified}
+                  className="w-full flex items-center justify-center gap-2 bg-[#FF0000] hover:bg-[#CC0000] text-white font-bold py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md text-sm sm:text-base"
                 >
-                  <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
                     <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
                   </svg>
                   Subscribe on YouTube
@@ -257,17 +261,19 @@ export default function VerifyPage() {
           <div className={`transition-all duration-500 ${isVerified ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">Step 2: Access Content</h3>
-              <button
-                onClick={handleAccessContent}
-                disabled={!isVerified}
-                className={`w-full font-bold py-4 rounded-xl transition shadow-md text-lg ${
-                  isVerified 
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-700 text-white hover:from-blue-700 hover:to-indigo-800 transform hover:-translate-y-1' 
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                {isVerified ? `Open ${gatedLink.fileName || 'Content'} ✨` : 'Locked'}
-              </button>
+              <div className="pt-4 sm:pt-6 border-t border-gray-100">
+                <button
+                  onClick={handleAccessContent}
+                  disabled={!isVerified}
+                  className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl font-bold transition flex items-center justify-center gap-2 text-sm sm:text-base
+                    ${isVerified
+                      ? 'bg-gray-900 hover:bg-black text-white shadow-lg transform hover:-translate-y-0.5'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  {isVerified ? `Open ${gatedLink.fileName || 'Content'} ✨` : 'Locked'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

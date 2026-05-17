@@ -18,14 +18,23 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'Link ID is required' }, { status: 400 })
+    }
+
     const stored = await redis.get('gatedLinks')
 
     if (!stored) {
-      return NextResponse.json({ gatedLinks: [] })
+      return NextResponse.json({ gatedLink: null })
     }
 
     const gatedLinks = typeof stored === 'string' ? JSON.parse(stored) : stored
-    return NextResponse.json({ gatedLinks })
+    const link = gatedLinks.find((l: any) => l.id === id)
+    
+    return NextResponse.json({ gatedLink: link || null })
   } catch (error: any) {
     console.error('Error retrieving gated links:', error)
     return NextResponse.json(
