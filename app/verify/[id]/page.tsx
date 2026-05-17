@@ -77,17 +77,37 @@ export default function VerifyPage() {
       subscribeUrl += subscribeUrl.includes('?') ? '&sub_confirmation=1' : '?sub_confirmation=1'
     }
 
-    // Open YouTube channel in a new tab
-    window.open(subscribeUrl, '_blank')
+    // Detect mobile device to force native app
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    const isAndroid = /Android/.test(navigator.userAgent)
+
+    if (isAndroid) {
+      const strippedUrl = subscribeUrl.replace(/^https?:\/\//, '')
+      // Android Intent: forces app, falls back to web if app is missing
+      const intentUrl = `intent://${strippedUrl}#Intent;package=com.google.android.youtube;scheme=https;S.browser_fallback_url=${encodeURIComponent(subscribeUrl)};end`
+      window.location.href = intentUrl
+    } else if (isIOS) {
+      // iOS: Try custom scheme first
+      const iosUrl = subscribeUrl.replace(/^https?:\/\//, 'youtube://')
+      window.location.href = iosUrl
+      
+      // Fallback for iOS if app isn't installed
+      setTimeout(() => {
+        window.location.href = subscribeUrl
+      }, 2500)
+    } else {
+      // Desktop: Open in new tab
+      window.open(subscribeUrl, '_blank')
+    }
 
     // Start verification sequence
     setIsVerifying(true)
 
-    // Wait 6 seconds to give them time to click subscribe, then unlock the content
+    // Wait 10 seconds to give them time to click subscribe, then unlock the content
     setTimeout(() => {
       setIsVerifying(false)
       setIsVerified(true)
-    }, 6000)
+    }, 10000)
   }
 
   const handleAccessContent = () => {

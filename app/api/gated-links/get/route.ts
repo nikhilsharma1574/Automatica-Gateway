@@ -1,10 +1,10 @@
 import { Redis } from '@upstash/redis'
 import { NextRequest, NextResponse } from 'next/server'
 
-const isRedisConfigured = Boolean(
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-)
-const redis = isRedisConfigured ? Redis.fromEnv() : null
+const url = process.env.UPSTASH_REDIS_REST_URL?.replace(/^"|"$/g, '') || ''
+const token = process.env.UPSTASH_REDIS_REST_TOKEN?.replace(/^"|"$/g, '') || ''
+const isRedisConfigured = Boolean(url && token)
+const redis = isRedisConfigured ? new Redis({ url, token }) : null
 
 export async function GET(request: NextRequest) {
   try {
