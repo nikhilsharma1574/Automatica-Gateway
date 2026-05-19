@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface GatedLink {
   id: string
@@ -91,12 +92,9 @@ export default function DashboardPage() {
       <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-red-50 to-white pointer-events-none -z-10" />
 
       {/* Navbar */}
-      <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto border-b border-gray-100">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-red-500/20">
-            A
-          </div>
-          <span className="text-2xl font-black tracking-tight text-gray-900">Automatica</span>
+      <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto border-b border-gray-100">
+        <Link href="/" className="flex items-center hover:opacity-80 transition">
+          <Image src="/logo-cropped.png" alt="Automatica" width={200} height={48} className="w-36 sm:w-48 h-auto object-contain" priority />
         </Link>
         <Link href="/" className="text-gray-500 hover:text-gray-900 transition font-medium">
           Back to Home

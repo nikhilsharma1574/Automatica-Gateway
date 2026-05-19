@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Home() {
   return (
@@ -9,12 +10,9 @@ export default function Home() {
       <div className="absolute top-[20%] left-[-10%] w-[30%] h-[30%] rounded-full bg-blue-400/10 blur-[100px] pointer-events-none -z-10" />
 
       {/* Navbar */}
-      <nav className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-6 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white text-lg sm:text-xl shadow-lg shadow-red-500/20">
-            A
-          </div>
-          <span className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">Automatica</span>
+      <nav className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 max-w-7xl mx-auto">
+        <div className="flex items-center hover:opacity-80 transition">
+          <Image src="/logo-cropped.png" alt="Automatica" width={200} height={48} className="w-36 sm:w-48 h-auto object-contain" priority />
         </div>
         <div className="hidden sm:flex items-center gap-6 text-sm font-semibold text-gray-600">
           <a href="#" className="hover:text-red-600 transition">How it Works</a>

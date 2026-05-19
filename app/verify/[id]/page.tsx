@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface GatedLink {
   id: string
@@ -22,6 +23,26 @@ export default function VerifyPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isVerifying, setIsVerifying] = useState(false)
+  const [verificationStepIndex, setVerificationStepIndex] = useState(0)
+
+  const verificationSteps = [
+    "Connecting to secure backend...",
+    "Checking your subscription status...",
+    "Verifying subscription details...",
+    "Finalizing access..."
+  ]
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (isVerifying) {
+      interval = setInterval(() => {
+        setVerificationStepIndex((prev) => (prev + 1) % verificationSteps.length)
+      }, 2500)
+    } else {
+      setVerificationStepIndex(0)
+    }
+    return () => clearInterval(interval)
+  }, [isVerifying])
 
   useEffect(() => {
     const loadLink = async () => {
@@ -120,13 +141,8 @@ export default function VerifyPage() {
   if (isLoading && !gatedLink) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="flex items-center justify-center py-6 bg-white border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white shadow-sm">
-              A
-            </div>
-            <span className="text-xl font-black tracking-tight text-gray-900">Automatica</span>
-          </div>
+        <div className="flex items-center justify-center py-4 bg-white border-b border-gray-100">
+          <Image src="/logo-cropped.png" alt="Automatica" width={200} height={48} className="w-36 sm:w-48 h-auto object-contain" priority />
         </div>
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
@@ -141,13 +157,8 @@ export default function VerifyPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="flex items-center justify-center py-6 bg-white border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white shadow-sm">
-              A
-            </div>
-            <span className="text-xl font-black tracking-tight text-gray-900">Automatica</span>
-          </div>
+        <div className="flex items-center justify-center py-4 bg-white border-b border-gray-100">
+          <Image src="/logo-cropped.png" alt="Automatica" width={200} height={48} className="w-36 sm:w-48 h-auto object-contain" priority />
         </div>
         <div className="max-w-2xl mx-auto px-6 py-12">
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
@@ -169,12 +180,7 @@ export default function VerifyPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="flex items-center justify-center py-6 bg-white border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white shadow-sm">
-              A
-            </div>
-            <span className="text-xl font-black tracking-tight text-gray-900">Automatica</span>
-          </div>
+          <Image src="/logo-cropped.png" alt="Automatica" width={200} height={48} className="w-36 sm:w-48 h-auto object-contain" priority />
         </div>
         <div className="max-w-2xl mx-auto px-6 py-12">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
@@ -195,12 +201,9 @@ export default function VerifyPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="flex justify-center py-6 sm:py-8 border-b border-gray-100 bg-white/50 backdrop-blur-md">
-        <Link href="/" className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center font-bold text-white text-lg sm:text-xl shadow-lg shadow-red-500/20">
-            A
-          </div>
-          <span className="text-xl sm:text-2xl font-black tracking-tight text-gray-900">Automatica</span>
+      <header className="flex justify-center py-4 border-b border-gray-100 bg-white/50 backdrop-blur-md">
+        <Link href="/" className="flex items-center hover:opacity-80 transition">
+          <Image src="/logo-cropped.png" alt="Automatica" width={200} height={48} className="w-36 sm:w-48 h-auto object-contain" priority />
         </Link>
       </header>
 
@@ -209,7 +212,7 @@ export default function VerifyPage() {
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-[0_10px_40px_-12px_rgba(0,0,0,0.1)] p-6 sm:p-8 border border-gray-100">
           <div className="text-center mb-6 sm:mb-8">
             <span className="inline-block bg-red-50 text-red-600 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold tracking-wide mb-3 sm:mb-4">LOCKED CONTENT</span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2 sm:mb-3">{gatedLink.fileName || 'Secret Content'}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 sm:mb-3">{gatedLink.fileName || 'Secret Content'}</h1>
             <p className="text-sm sm:text-base text-gray-500 font-medium">Please complete the step below to unlock this link</p>
           </div>
 
@@ -222,9 +225,21 @@ export default function VerifyPage() {
               </p>
 
               {isVerifying ? (
-                <div className="py-4">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
-                  <p className="text-blue-700 font-medium animate-pulse">Waiting for verification...</p>
+                <div className="py-8 flex flex-col items-center justify-center">
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-blue-200 rounded-full animate-ping opacity-75"></div>
+                    <div className="relative flex items-center justify-center h-14 w-14 bg-white rounded-full border-4 border-blue-50 shadow-sm">
+                      <div className="h-6 w-6 border-b-2 border-r-2 border-blue-600 rounded-full animate-spin"></div>
+                    </div>
+                  </div>
+                  <div className="h-8 flex justify-center items-center overflow-hidden w-full relative">
+                    <p 
+                      key={verificationStepIndex}
+                      className="text-blue-800 font-semibold text-sm sm:text-base animate-pulse"
+                    >
+                      {verificationSteps[verificationStepIndex]}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <button
@@ -285,8 +300,9 @@ export default function VerifyPage() {
       </div>
 
       <footer className="py-10 mt-16 border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 text-center">
+        <div className="max-w-7xl mx-auto px-6 text-center flex flex-col gap-2">
           <p className="text-sm font-medium text-gray-400">&copy; 2026 Automatica. The universal content unlocker.</p>
+          <p className="text-sm font-semibold text-gray-500">Developed by Nikhil Sharma</p>
         </div>
       </footer>
     </div>
